@@ -1,53 +1,68 @@
 <template>
   <div class="page app-shell">
-    <section class="login-layout">
+    <section class="register-layout">
       <div class="intro">
         <div class="intro-chip">H1 Visual Imitation System</div>
-        <h1>从单目视频到 H1 仿真展示的完整闭环平台</h1>
+        <h1>创建账号后开始管理视频模仿任务</h1>
         <p>
-          登录后可以创建流水线任务、查看阶段进度、预览仿真视频，并读取机器人动作摘要结果。
+          新账号可用于提交单目视频、追踪四阶段处理进度，并在网页中查看 H1 机器人仿真结果。
         </p>
 
         <div class="feature-list">
           <div class="feature-item">
             <span class="dot"></span>
-            <span>Stage1 人体动作提取</span>
+            <span>账号注册后可直接登录系统</span>
           </div>
           <div class="feature-item">
             <span class="dot"></span>
-            <span>Stage2 H1 动作重定向</span>
+            <span>任务进度、阶段日志与结果文件统一展示</span>
           </div>
           <div class="feature-item">
             <span class="dot"></span>
-            <span>Stage3 检查摘要与 Stage4 仿真导出</span>
+            <span>适配演示场景的仿真视频预览入口</span>
           </div>
         </div>
       </div>
 
       <div class="card glass-card">
         <div class="card-head">
-          <div class="card-tag">账号入口</div>
-          <h2>登录系统</h2>
-          <p>默认账号已填好，登录后会跳转到任务列表页。</p>
+          <div class="card-tag">新账号</div>
+          <h2>注册系统</h2>
+          <p>填写用户名、邮箱和密码，注册成功后会自动跳转到登录页。</p>
         </div>
 
         <div class="form-item">
           <label>用户名</label>
-          <input v-model="username" placeholder="请输入用户名" />
+          <input v-model.trim="username" placeholder="请输入用户名" autocomplete="username" />
+        </div>
+
+        <div class="form-item">
+          <label>邮箱</label>
+          <input v-model.trim="email" type="email" placeholder="请输入邮箱" autocomplete="email" />
         </div>
 
         <div class="form-item">
           <label>密码</label>
-          <input v-model="password" type="password" placeholder="请输入密码" />
+          <input v-model="password" type="password" placeholder="请输入密码" autocomplete="new-password" />
         </div>
 
-        <button class="primary-button submit-btn" :disabled="loading" @click="login">
-          {{ loading ? "登录中..." : "登录并进入系统" }}
+        <div class="form-item">
+          <label>确认密码</label>
+          <input
+            v-model="confirmPassword"
+            type="password"
+            placeholder="请再次输入密码"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <button class="primary-button submit-btn" :disabled="loading" @click="register">
+          {{ loading ? "注册中..." : "创建账号" }}
         </button>
 
         <div class="switch-entry">
-          <span>还没有账号？</span>
-          <router-link to="/register">创建新账号</router-link>
+          <span>已有账号？</span>
+          <router-link to="/login">返回登录</router-link>
         </div>
 
         <div v-if="error" class="status-message error">{{ error }}</div>
@@ -59,27 +74,51 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { API_BASE } from "@/utils/api";
 
-const username = ref("admin");
-const password = ref("123456");
+const router = useRouter();
+const username = ref("");
+const email = ref("");
+const password = ref("");
+const confirmPassword = ref("");
 const loading = ref(false);
 const error = ref("");
 const message = ref("");
 
-async function login() {
+function validateForm() {
+  if (!username.value || !email.value || !password.value || !confirmPassword.value) {
+    throw new Error("请完整填写注册信息");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    throw new Error("请输入有效的邮箱地址");
+  }
+
+  if (password.value.length < 6) {
+    throw new Error("密码长度至少为 6 位");
+  }
+
+  if (password.value !== confirmPassword.value) {
+    throw new Error("两次输入的密码不一致");
+  }
+}
+
+async function register() {
   try {
     loading.value = true;
     error.value = "";
     message.value = "";
+    validateForm();
 
-    const resp = await fetch(`${API_BASE}/api/auth/login`, {
+    const resp = await fetch(`${API_BASE}/api/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         username: username.value,
+        email: email.value,
         password: password.value,
       }),
     });
@@ -87,17 +126,15 @@ async function login() {
     const data = await resp.json();
 
     if (!resp.ok || data.code !== 0) {
-      throw new Error(data.message || "登录失败");
+      throw new Error(data.message || "注册失败");
     }
 
-    localStorage.setItem("token", data.data.token);
-    localStorage.setItem("user", JSON.stringify(data.data.user));
-    message.value = "登录成功，正在跳转...";
+    message.value = "注册成功，正在跳转到登录页...";
     setTimeout(() => {
-      window.location.href = "/tasks";
-    }, 500);
+      router.push("/login");
+    }, 700);
   } catch (e) {
-    error.value = e?.message || "登录失败";
+    error.value = e?.message || "注册失败";
   } finally {
     loading.value = false;
   }
@@ -111,7 +148,7 @@ async function login() {
   align-items: center;
 }
 
-.login-layout {
+.register-layout {
   display: grid;
   grid-template-columns: minmax(320px, 1.1fr) minmax(320px, 460px);
   gap: 28px;
@@ -257,7 +294,7 @@ input:focus {
 }
 
 @media (max-width: 900px) {
-  .login-layout {
+  .register-layout {
     grid-template-columns: 1fr;
   }
 }

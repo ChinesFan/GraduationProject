@@ -48,17 +48,42 @@ def run_pipeline_in_background(app, task_id: int, saved_path: str, stem: str):
             return
 
         try:
+            def stage1_progress(progress: int, stage_message: str):
+                update_task_progress(
+                    task,
+                    progress=progress,
+                    current_stage="stage1",
+                    stage_message=stage_message,
+                )
+
+            def stage2_progress(progress: int, stage_message: str):
+                update_task_progress(
+                    task,
+                    progress=progress,
+                    current_stage="stage2",
+                    stage_message=stage_message,
+                )
+
+            def stage4_progress(progress: int, stage_message: str):
+                update_task_progress(
+                    task,
+                    progress=progress,
+                    current_stage="stage4",
+                    stage_message=stage_message,
+                )
+
             update_task_progress(
                 task,
                 status="running",
-                progress=15,
+                progress=10,
                 current_stage="stage1",
-                stage_message="正在执行 Stage1：人体动作提取",
+                stage_message="正在执行 Stage1：准备人体动作提取",
             )
             result1 = run_stage1(
                 project_root=current_app.config["BASE_DIR"],
                 input_video=saved_path,
                 stem=stem,
+                progress_callback=stage1_progress,
             )
 
             update_task_progress(
@@ -77,6 +102,7 @@ def run_pipeline_in_background(app, task_id: int, saved_path: str, stem: str):
             result2 = run_stage2(
                 project_root=current_app.config["BASE_DIR"],
                 stem=stem,
+                progress_callback=stage2_progress,
             )
 
             update_task_progress(
@@ -114,6 +140,7 @@ def run_pipeline_in_background(app, task_id: int, saved_path: str, stem: str):
             result4 = run_stage4(
                 project_root=current_app.config["BASE_DIR"],
                 stem=stem,
+                progress_callback=stage4_progress,
             )
 
             update_task_progress(

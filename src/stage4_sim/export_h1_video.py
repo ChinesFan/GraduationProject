@@ -36,6 +36,8 @@ DEFAULT_H1_JOINT_NAMES = [
     "right_elbow_joint",
 ]
 
+FRONT_CAMERA_YAW_DEG = 205.0
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Stage 4: export H1 motion to mp4")
@@ -116,7 +118,7 @@ def render_frame(robot_id: int, width: int, height: int):
 
     target = [base_pos[0], base_pos[1], base_pos[2] + 0.7]
     distance = 2.8
-    yaw = 225
+    yaw = FRONT_CAMERA_YAW_DEG
     pitch = -20
     roll = 0
     up_axis_index = 2
@@ -216,6 +218,7 @@ def main():
         )
 
         try:
+            last_progress = -1
             for i in range(len(root_pos)):
                 reset_robot_pose(
                     robot_id=robot_id,
@@ -227,12 +230,15 @@ def main():
                 frame = render_frame(robot_id, args.width, args.height)
                 writer.append_data(frame)
 
-                if i % 30 == 0:
-                    print(f"frame {i}/{len(root_pos)}")
+                progress = min(100, int((i + 1) / len(root_pos) * 100))
+                if progress != last_progress:
+                    print(f"frame {i}/{len(root_pos)}", flush=True)
+                    last_progress = progress
         finally:
             writer.close()
 
-        print(f"Stage 4 video saved to: {output_path}")
+        print(f"frame {len(root_pos)}/{len(root_pos)}", flush=True)
+        print(f"Stage 4 video saved to: {output_path}", flush=True)
 
     finally:
         p.disconnect(client)

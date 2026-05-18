@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginView from "@/views/LoginView.vue";
+import RegisterView from "@/views/RegisterView.vue";
 import TaskListView from "@/views/TaskListView.vue";
 import CreateTaskView from "@/views/CreateTaskView.vue";
 import TaskDetailView from "@/views/TaskDetailView.vue";
@@ -13,6 +14,11 @@ const routes = [
     path: "/login",
     name: "login",
     component: LoginView,
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: RegisterView,
   },
   {
     path: "/tasks",
@@ -38,7 +44,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token");
-  const publicPages = ["/login"];
+  const publicPages = ["/login", "/register"];
   const authRequired = !publicPages.includes(to.path);
 
   if (authRequired && !token) {
